@@ -1,0 +1,165 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+typedef pair<int,int> II;
+const int max_arr = 1e5+5;
+const int mod = 998244353;
+int n,m,m1;
+int pre[max_arr], xoa[max_arr], s[max_arr];
+vector<II> g[max_arr];
+int d[max_arr], c[max_arr];
+int ans[max_arr];
+II p[max_arr], tmp[max_arr];
+
+int sum(int a,int b) {
+    return ((a + b) % mod + mod) % mod;
+}
+
+int minos(int a,int b) {
+    return ((a - b) % mod + mod) % mod;
+}
+
+void dfs_size(int u,int dad) {
+    pre[u] = dad;
+    s[u] = 1;
+
+    for(auto x : g[u]) {
+        int v = x.first;
+        int l = x.second;
+        if(!xoa[v] && v != dad) {
+            dfs_size(v,u);
+            s[u] += s[v];
+        }
+    }
+}
+
+void dfs(int u,int dad) {
+    p[++m1] = {c[u], u};
+    tmp[++m] = {c[u], u};
+    for(auto x : g[u]) {
+        int v = x.first;
+        int w = x.second;
+        if(v != dad && !xoa[v]) {
+            d[v] = d[u] + 1;
+            c[v] = min(c[u], w);
+            dfs(v, u);
+        }
+    }
+}
+
+void centroid(int r,int dad) {
+    dfs_size(r,0);
+    int sz = s[r], sm;
+    while(1) {
+        sm = sz - s[r];
+        int u = 0;
+        for(auto x : g[r]) {
+            int v = x.first;
+            if(!xoa[v] && pre[v] == r && sm < s[v]) {
+                sm = s[v];
+                u = v;
+            }
+        }
+        if(sm <= sz/2) break;
+        r = u;
+    }
+
+    m = 0;
+    for(auto x : g[r]) {
+        int v = x.first, w = x.second;
+        if(xoa[v]) continue;
+        c[v] = w, d[v] = 1;
+        m1 = 0;
+        dfs(v, r);
+        sort(p + 1, p + m1 + 1);
+        int s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0, s6 = 0;
+        for(int i = 1 ; i <= m1 ; i++) {
+            int u = p[i].second;
+            ans[u] = (ans[u] + 1ll * c[u] * d[u] % mod * d[u] % mod) % mod;
+            ans[r] = (ans[r] + 1ll * c[u] * d[u] % mod * d[u] % mod) % mod;
+            s4++;
+            s5 = (s5 + 1ll * d[u] * d[u] % mod) % mod;
+            s6 = (s6 + d[u]) % mod;
+
+        }
+
+        for(int i = 1 ; i <= m1 ; i++) {
+            int u = p[i].second, ss;
+            s4--;
+            s5 = minos(s5, 1ll * d[u] * d[u] % mod);
+            s6 = minos(s6, d[u] % mod);
+            ss =  ((s1 + 1ll * s2 * d[u] % mod * d[u] % mod) % mod + 2ll * d[u] * s3 % mod) % mod;
+            ans[u] = minos(ans[u], ss);
+            s1 = sum(s1, 1ll * c[u] * d[u] % mod * d[u] % mod);
+            s2 = sum(s2, c[u]);
+            s3 = sum(s3, 1ll * c[u] * d[u] % mod);
+            ss = ((1ll * s4 * c[u] % mod * d[u] % mod * d[u] % mod + 1ll * c[u] * s5 % mod) % mod + 2ll * c[u] * d[u] % mod * s6 % mod)%mod;
+            ans[u] = minos(ans[u], ss);
+        }
+//        cout<<"\n";
+//        cout << v << "\n";
+//        cout << s4 << " "<<s5 << " "<<s6 << "\n\n";
+    }
+
+    sort(tmp + 1, tmp + m + 1);
+    int s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0, s6 = 0;
+    for(int i = 1 ; i <= m ; i++) {
+            int u = tmp[i].second;
+            s4++;
+            s5 = (s5 + 1ll * d[u] * d[u] % mod) % mod;
+            s6 = (s6 + d[u]) % mod;
+        }
+    for(int i = 1 ; i <= m ; i++) {
+            int u = tmp[i].second, ss;
+            s4--;
+            s5 = minos(s5, 1ll * d[u] * d[u] % mod);
+            s6 = minos(s6, d[u]);
+            ss =  ((s1 + 1ll * s2 * d[u] % mod * d[u] % mod) % mod + 2ll * d[u] * s3 % mod) % mod;
+            ans[u] = sum(ans[u], ss);
+            s1 = sum(s1, 1ll * c[u] * d[u] % mod * d[u] % mod);
+            s2 = sum(s2, c[u]);
+            s3 = sum(s3, 1ll * c[u] * d[u] % mod);
+            ss = ((1ll * s4 * c[u] % mod * d[u] % mod * d[u] % mod + 1ll * c[u] * s5 % mod) % mod + 2ll * c[u] * d[u] % mod * s6 % mod)%mod;
+            ans[u] = sum(ans[u], ss);
+        }
+
+    xoa[r] = 1;
+    for(auto x : g[r]) {
+        int u = x.first;
+        if(!xoa[u])
+            centroid(u, r);
+    }
+}
+
+
+void input() {
+    cin >> n;
+    for (int i = 1 ; i < n ; i++) {
+        int u, v, w;
+        cin >> u >> v >> w;
+        g[u].push_back({v,w});
+        g[v].push_back({u,w});
+    }
+}
+
+void output() {
+    centroid(1,0);
+}
+
+void Progress() {
+    input();
+    output();
+    for(int i = 1 ; i <= n ; i++) {
+            cout << ans[i] << "\n";
+    }
+}
+
+#define NAME "netw"
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(0);cout.tie(0);
+    freopen(NAME".inp", "r", stdin);
+    freopen(NAME".out", "w", stdout);
+    Progress();
+}
