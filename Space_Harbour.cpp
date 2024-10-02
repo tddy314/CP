@@ -1,6 +1,7 @@
 
 #include <bits/stdc++.h>
 #define ll long long
+#define i64 int_64
 
 using namespace std;
 
